@@ -76,7 +76,7 @@ def define_gui(assets):
         )
     )
 
-    # make a number pad
+    # number pad
     grid_position = glm.vec2(0.6, 0.1)
     button_count = glm.vec2(3, 3)
     button_scale = glm.vec2(0.1, 0.1)
@@ -134,7 +134,7 @@ def food_gui_top_level(gui, assets):
 
 
 def food_selector(gui, assets):
-    # need a row of buttons,
+    # row of buttons,
     # each button is a food option
     # potato, hot chip, ice cream, steak
 
