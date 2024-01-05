@@ -119,6 +119,54 @@ def define_gui(assets):
     return gui
 
 
+def food_gui_top_level(gui, assets):
+    gui.buttons = []
+    # make a select food option button
+    gui.add_button(
+        Button(
+            glm.vec2(0.6, 0.6),
+            glm.vec2(0.1, 0.1),
+            color=(200, 200, 200),
+            event=DemoGuiEvents.OPEN_FOOD_SELECTOR(),
+            image=assets.food_selector,
+        )
+    )
+
+
+def food_selector(gui, assets):
+    # need a row of buttons,
+    # each button is a food option
+    # potato, hot chip, ice cream, steak
+
+    gui.buttons = []
+    buttons_position = glm.vec2(0.5, 0.7)
+    buttons_scale = glm.vec2(0.1, 0.1)
+    buttons_spacing = glm.vec2(0.01, 0.01)
+
+    events = [
+        DemoGuiEvents.FOOD_OPTION(FoodOption.Food.POTATO),
+        DemoGuiEvents.FOOD_OPTION(FoodOption.Food.HOT_CHIP),
+        DemoGuiEvents.FOOD_OPTION(FoodOption.Food.ICE_CREAM),
+        DemoGuiEvents.FOOD_OPTION(FoodOption.Food.STEAK),
+    ]
+
+    for i, event in enumerate(events):
+        gui.add_button(
+            Button(
+                buttons_position + glm.vec2(i, 0) * (buttons_scale + buttons_spacing),
+                buttons_scale,
+                color=(200, 200, 200),
+                event=event,
+                image={
+                    FoodOption.Food.POTATO: assets.potato,
+                    FoodOption.Food.HOT_CHIP: assets.chips,
+                    FoodOption.Food.ICE_CREAM: assets.ice_cream,
+                    FoodOption.Food.STEAK: assets.steak,
+                }[event.selection],
+            )
+        )
+
+
 ################################ MAIN ################################
 
 
@@ -129,6 +177,7 @@ def draw(surface):
 def main():
     # init
     window = pygame.display.set_mode(window_size.to_tuple())
+    pygame.display.set_caption("GUI Demo")
     render_surface = pygame.Surface(render_resolution.to_tuple())
 
     class Assets:
@@ -137,8 +186,11 @@ def main():
         ice_cream = pygame.image.load("assets/ice-cream.png")
         chips = pygame.image.load("assets/chips.png")
         steak = pygame.image.load("assets/meat.png")
+        food_selector = pygame.image.load("assets/fast-food.png")
 
     gui = define_gui(Assets)
+    food_gui = Gui()
+    food_gui_top_level(food_gui, Assets)
 
     # main loop
     running = True
@@ -157,9 +209,20 @@ def main():
             print(event)
         gui.clear_events()
 
+        # update food gui
+        food_gui.step(mouse_pos(), mouse_pressed, render_resolution)
+        for event in food_gui.get_events():
+            print(event)
+            if isinstance(event, OpenFoodSelector):
+                food_selector(food_gui, Assets)
+            elif isinstance(event, FoodOption):
+                food_gui_top_level(food_gui, Assets)
+        food_gui.clear_events()
+
         # drawing
         render_surface.fill((60, 60, 60))
         gui.draw(render_surface, render_resolution)
+        food_gui.draw(render_surface, render_resolution)
         draw(render_surface)
 
         # blit to window
