@@ -8,7 +8,7 @@ from drawing import draw_button, draw_slider
 
 ################################ Event Base ################################
 class DataEnum(Enum):
-    """Like an enum, that can hold data. Your event enum should inherit this."""
+    """Like an enum, that can hold data."""
 
     def __call__(self, *args, **kwargs):
         instance = self.value(*args, **kwargs)
