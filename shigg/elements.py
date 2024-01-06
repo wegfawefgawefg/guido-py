@@ -1,43 +1,3 @@
-from enum import Enum
-import math
-
-import pygame
-import glm
-from drawing import draw_button, draw_slider
-
-
-################################ Event Base ################################
-class DataEnum(Enum):
-    """Like an enum, that can hold data."""
-
-    def __call__(self, *args, **kwargs):
-        instance = self.value(*args, **kwargs)
-        instance._enum_name = self.name  # Store the enum's name in the instance
-
-        # Override the instance's __repr__ to provide a custom string representation
-        def instance_repr(self):
-            attrs = ", ".join(
-                f"{k}: {v}" for k, v in self.__dict__.items() if k != "_enum_name"
-            )
-            return f"{self._enum_name}({attrs})"
-
-        instance.__class__.__repr__ = instance_repr
-
-        return instance
-
-    def __repr__(self) -> str:
-        return f"{self.name}"
-
-
-class GuiEvents(DataEnum):
-    """The enum that holds your events. Inherit this."""
-
-    pass
-
-
-################################ UI ELEMENTS ################################
-
-
 class Button:
     def __init__(
         self,
@@ -82,7 +42,7 @@ class Button:
         if mouse_pressed and self.hovered:
             if self.pressed == False:
                 if self.event:
-                    event = self.event
+                    event = self.event()
             self.pressed = True
         else:
             self.pressed = False
@@ -127,7 +87,8 @@ class Slider:
 
         if self.was_pressed and not mouse_pressed:
             if self.event:
-                event = self.event(value=self.value)
+                event_constructor = self.event
+                event = event_constructor(value=self.value)
             self.was_pressed = False
 
         absolute_tl = resolution * self.position
@@ -166,47 +127,3 @@ class Slider:
             self.hovered = False
 
         return event
-
-
-################################ GUI ################################
-
-
-class Gui:
-    def __init__(self) -> None:
-        self.events = []
-        self.buttons = []
-        self.sliders = []
-
-    def add_button(self, button: Button):
-        self.buttons.append(button)
-
-    def add_slider(self, slider: Slider):
-        self.sliders.append(slider)
-
-    def step(
-        self,
-        mouse_position: glm.vec2,
-        mouse_pressed: bool,
-        resolution: glm.vec2,
-        click=False,
-    ):
-        for button in self.buttons:
-            if event := button.step(mouse_position, mouse_pressed, resolution):
-                self.events.append(event)
-
-        for slider in self.sliders:
-            if event := slider.step(mouse_position, mouse_pressed, resolution):
-                self.events.append(event)
-
-    def get_events(self):
-        return self.events
-
-    def clear_events(self):
-        self.events.clear()
-
-    def draw(self, surface, resolution):
-        for button in self.buttons:
-            draw_button(surface, button, resolution)
-
-        for slider in self.sliders:
-            draw_slider(surface, slider, resolution)

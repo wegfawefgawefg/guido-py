@@ -1,3 +1,4 @@
+################ DEFAULT PYGAME DRAWING ################
 import glm
 import pygame
 

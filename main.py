@@ -4,7 +4,7 @@ import glm
 
 from enum import Enum
 
-from gui import Gui, Button, Slider, GuiEvents
+from shigg import Gui, Event, Button, Slider
 
 pygame.init()
 
@@ -19,46 +19,35 @@ def mouse_pos():
 
 
 ################################ EVENTS ################################
-class SimpleNotification:
+class SimpleNotification(Event):
     pass
 
 
-class NumberPad:
-    def __init__(self, num):
-        self.num = num
-
-
-class Settings:
+class Settings(Event):
     pass
 
 
-class OpenFoodSelector:
+class OpenFoodSelector(Event):
     pass
 
 
-class FoodOption:
-    class Food(Enum):
-        POTATO = 0
-        HOT_CHIP = 1
-        ICE_CREAM = 2
-        STEAK = 3
-
-    def __init__(self, selection: Food):
-        self.selection = selection
+class NumberPad(Event):
+    number: int
 
 
-class SliderReleased:
-    def __init__(self, value):
-        self.value = value
+class Food(Enum):
+    POTATO = 0
+    HOT_CHIP = 1
+    ICE_CREAM = 2
+    STEAK = 3
 
 
-class DemoGuiEvents(GuiEvents):
-    SIMPLE_NOTIFICATION = SimpleNotification
-    NUMBER_PAD = NumberPad
-    SETTINGS = Settings
-    OPEN_FOOD_SELECTOR = OpenFoodSelector
-    FOOD_OPTION = FoodOption
-    SLIDER_RELEASED = SliderReleased
+class FoodOption(Event):
+    selection: Food
+
+
+class SliderReleased(Event):
+    value: float = 0.0
 
 
 ################################ DEFINE GUI ################################
@@ -71,7 +60,7 @@ def define_gui(assets):
             glm.vec2(0.1, 0.1),
             glm.vec2(0.1, 0.1),
             color=(200, 200, 200),
-            event=DemoGuiEvents.SETTINGS(),
+            event=Settings,
             image=assets.gear,
         )
     )
@@ -97,7 +86,7 @@ def define_gui(assets):
                 color=(200, 200, 200),
                 label_color=(0, 0, 0),
                 label=str(nums[i]),
-                event=DemoGuiEvents.NUMBER_PAD(nums[i]),
+                event=lambda: NumberPad(nums[i]),
             )
         )
 
@@ -112,7 +101,7 @@ def define_gui(assets):
             1,
             50,
             color=(200, 200, 200),
-            event=DemoGuiEvents.SLIDER_RELEASED,
+            event=SliderReleased,
         )
     )
 
@@ -127,7 +116,7 @@ def food_gui_top_level(gui, assets):
             glm.vec2(0.6, 0.6),
             glm.vec2(0.1, 0.1),
             color=(200, 200, 200),
-            event=DemoGuiEvents.OPEN_FOOD_SELECTOR(),
+            event=OpenFoodSelector,
             image=assets.food_selector,
         )
     )
@@ -144,10 +133,10 @@ def food_selector(gui, assets):
     buttons_spacing = glm.vec2(0.01, 0.01)
 
     events = [
-        DemoGuiEvents.FOOD_OPTION(FoodOption.Food.POTATO),
-        DemoGuiEvents.FOOD_OPTION(FoodOption.Food.HOT_CHIP),
-        DemoGuiEvents.FOOD_OPTION(FoodOption.Food.ICE_CREAM),
-        DemoGuiEvents.FOOD_OPTION(FoodOption.Food.STEAK),
+        FoodOption(Food.POTATO),
+        FoodOption(Food.HOT_CHIP),
+        FoodOption(Food.ICE_CREAM),
+        FoodOption(Food.STEAK),
     ]
 
     for i, event in enumerate(events):
@@ -158,10 +147,10 @@ def food_selector(gui, assets):
                 color=(200, 200, 200),
                 event=event,
                 image={
-                    FoodOption.Food.POTATO: assets.potato,
-                    FoodOption.Food.HOT_CHIP: assets.chips,
-                    FoodOption.Food.ICE_CREAM: assets.ice_cream,
-                    FoodOption.Food.STEAK: assets.steak,
+                    Food.POTATO: assets.potato,
+                    Food.HOT_CHIP: assets.chips,
+                    Food.ICE_CREAM: assets.ice_cream,
+                    Food.STEAK: assets.steak,
                 }[event.selection],
             )
         )
