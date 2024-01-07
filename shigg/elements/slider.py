@@ -1,56 +1,20 @@
-class Button:
-    def __init__(
-        self,
-        position,
-        scale,
-        color=(200, 200, 200),
-        text=None,
-        texture=None,
-        label=None,
-        label_color=None,
-        image=None,
-        event=None,
-    ) -> None:
-        self.position = position
-        self.scale = scale
-        self.color = color
-        self.text = text
-        self.texture = texture
-        self.label = label
-        self.label_color = label_color
-        self.image = image
-        self.event = event
-
-        self.hovered = False
-        self.pressed = False
-
-    def step(self, mouse_position, mouse_pressed, resolution):
-        event = None
-        absolute_position = resolution * self.position
-        absolute_dimensions = resolution * self.scale
-
-        if (
-            mouse_position.x > absolute_position.x
-            and mouse_position.x < absolute_position.x + absolute_dimensions.x
-            and mouse_position.y > absolute_position.y
-            and mouse_position.y < absolute_position.y + absolute_dimensions.y
-        ):
-            self.hovered = True
-        else:
-            self.hovered = False
-
-        if mouse_pressed and self.hovered:
-            if self.pressed == False:
-                if self.event:
-                    event = self.event()
-            self.pressed = True
-        else:
-            self.pressed = False
-
-        return event
+from ._element_event import ElementEvent
+from ._element import Element
 
 
-class Slider:
+class SliderMoved(ElementEvent):
+    def __init__(self, tag, value) -> None:
+        super().__init__(tag)
+        self.value = value
+
+
+class SliderReleased(ElementEvent):
+    def __init__(self, tag, value) -> None:
+        super().__init__(tag)
+        self.value = value
+
+
+class Slider(Element):
     def __init__(
         self,
         position,
@@ -62,8 +26,10 @@ class Slider:
         default_value,
         snap_sensetivity_fraction=0.05,
         color=(200, 200, 200),
-        event=None,
+        tag=None,
     ) -> None:
+        super().__init__(tag)
+
         self.position = position
         self.scale = scale
         self.color = color
@@ -77,7 +43,6 @@ class Slider:
         self.value = default_value
 
         self.color = color
-        self.event = event
 
         self.hovered = False
         self.was_pressed = False
@@ -86,9 +51,7 @@ class Slider:
         event = None
 
         if self.was_pressed and not mouse_pressed:
-            if self.event:
-                event_constructor = self.event
-                event = event_constructor(value=self.value)
+            event = SliderReleased(self.tag, self.value)
             self.was_pressed = False
 
         absolute_tl = resolution * self.position
@@ -103,6 +66,8 @@ class Slider:
         ):
             self.hovered = True
             if mouse_pressed:
+                old_value = self.value
+
                 total = absolute_br.x - absolute_tl.x
                 local_p = mouse_position.x - absolute_tl.x
                 fraction = local_p / total
@@ -121,6 +86,10 @@ class Slider:
 
                 # round to nearest 100th, needs to work for negative and 0
                 self.value = round(self.value, 2)
+
+                # only emit event if value changed
+                if self.value != old_value:
+                    event = SliderMoved(self.tag, self.value)
 
                 self.was_pressed = True
         else:

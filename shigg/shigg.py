@@ -31,7 +31,9 @@ class Gui:
                 self.events.append(event)
 
     def get_events(self):
-        return self.events
+        events = self.events
+        self.events = []
+        return events
 
     def clear_events(self):
         self.events.clear()

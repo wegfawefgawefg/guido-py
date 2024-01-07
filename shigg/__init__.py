@@ -1,3 +1,6 @@
 from .elements import Button, Slider
 from .shigg import Gui
-from .event import Event
+
+# export elements
+from .elements import Button
+from .elements import Slider

@@ -1,10 +1,12 @@
+from enum import Enum, auto
 import math
+
 import pygame
 import glm
+from small_ass_cache import AssetCache, loader
 
-from enum import Enum
+from shigg import Gui, Button, Slider
 
-from shigg import Gui, Event, Button, Slider
 
 pygame.init()
 
@@ -18,36 +20,47 @@ def mouse_pos():
     return glm.vec2(pygame.mouse.get_pos()) / window_size * render_resolution
 
 
+################################ ASSETS ################################
+
+
+@loader(pygame.image.load, path="assets/")
+class Icons(Enum):
+    gear = "gear.png"
+    potato = "potato.png"
+    ice_cream = "ice-cream.png"
+    chips = "chips.png"
+    steak = "meat.png"
+    food_selector = "fast-food.png"
+
+
+assets = AssetCache()
+
 ################################ EVENTS ################################
-class SimpleNotification(Event):
-    pass
 
 
-class Settings(Event):
-    pass
+class TopLevel(Enum):
+    Settings = auto()
+    SetVolume = auto()
 
 
-class OpenFoodSelector(Event):
-    pass
+class NumPad(Enum):
+    One = auto()
+    Two = auto()
+    Three = auto()
+    Four = auto()
+    Five = auto()
+    Six = auto()
+    Seven = auto()
+    Eight = auto()
+    Nine = auto()
 
 
-class NumberPad(Event):
-    number: int
-
-
-class Food(Enum):
-    POTATO = 0
-    HOT_CHIP = 1
-    ICE_CREAM = 2
-    STEAK = 3
-
-
-class FoodOption(Event):
-    selection: Food
-
-
-class SliderReleased(Event):
-    value: float = 0.0
+class FoodSelector(Enum):
+    OpenFoodSelector = auto()
+    SelectionPotato = auto()
+    SelectionHotChip = auto()
+    SelectionIceCream = auto()
+    SelectionSteak = auto()
 
 
 ################################ DEFINE GUI ################################
@@ -60,8 +73,8 @@ def define_gui(assets):
             glm.vec2(0.1, 0.1),
             glm.vec2(0.1, 0.1),
             color=(200, 200, 200),
-            event=Settings,
-            image=assets.gear,
+            image=assets.get(Icons.gear),
+            tag=TopLevel.Settings,
         )
     )
 
@@ -86,14 +99,24 @@ def define_gui(assets):
                 color=(200, 200, 200),
                 label_color=(0, 0, 0),
                 label=str(nums[i]),
-                event=lambda: NumberPad(nums[i]),
+                tag=[
+                    NumPad.Seven,
+                    NumPad.Eight,
+                    NumPad.Nine,
+                    NumPad.Four,
+                    NumPad.Five,
+                    NumPad.Six,
+                    NumPad.One,
+                    NumPad.Two,
+                    NumPad.Three,
+                ][i],
             )
         )
 
     # make a slider
     gui.add_slider(
         Slider(
-            glm.vec2(0.1, 0.6),
+            glm.vec2(0.1, 0.25),
             glm.vec2(0.3, 0.1),
             0.05,
             0,
@@ -101,7 +124,7 @@ def define_gui(assets):
             1,
             50,
             color=(200, 200, 200),
-            event=SliderReleased,
+            tag=TopLevel.SetVolume,
         )
     )
 
@@ -116,8 +139,8 @@ def food_gui_top_level(gui, assets):
             glm.vec2(0.6, 0.6),
             glm.vec2(0.1, 0.1),
             color=(200, 200, 200),
-            event=OpenFoodSelector,
-            image=assets.food_selector,
+            image=assets.get(Icons.food_selector),
+            tag=FoodSelector.OpenFoodSelector,
         )
     )
 
@@ -132,26 +155,28 @@ def food_selector(gui, assets):
     buttons_scale = glm.vec2(0.1, 0.1)
     buttons_spacing = glm.vec2(0.01, 0.01)
 
-    events = [
-        FoodOption(Food.POTATO),
-        FoodOption(Food.HOT_CHIP),
-        FoodOption(Food.ICE_CREAM),
-        FoodOption(Food.STEAK),
+    event_tags = [
+        FoodSelector.SelectionPotato,
+        FoodSelector.SelectionHotChip,
+        FoodSelector.SelectionIceCream,
+        FoodSelector.SelectionSteak,
     ]
 
-    for i, event in enumerate(events):
+    for i, event_tag in enumerate(event_tags):
+        icon = {
+            FoodSelector.SelectionPotato: Icons.potato,
+            FoodSelector.SelectionHotChip: Icons.chips,
+            FoodSelector.SelectionIceCream: Icons.ice_cream,
+            FoodSelector.SelectionSteak: Icons.steak,
+        }[event_tag]
+
         gui.add_button(
             Button(
                 buttons_position + glm.vec2(i, 0) * (buttons_scale + buttons_spacing),
                 buttons_scale,
                 color=(200, 200, 200),
-                event=event,
-                image={
-                    Food.POTATO: assets.potato,
-                    Food.HOT_CHIP: assets.chips,
-                    Food.ICE_CREAM: assets.ice_cream,
-                    Food.STEAK: assets.steak,
-                }[event.selection],
+                tag=event_tag,
+                image=assets.get(icon),
             )
         )
 
@@ -169,17 +194,9 @@ def main():
     pygame.display.set_caption("GUI Demo")
     render_surface = pygame.Surface(render_resolution.to_tuple())
 
-    class Assets:
-        gear = pygame.image.load("assets/gear.png")
-        potato = pygame.image.load("assets/potato.png")
-        ice_cream = pygame.image.load("assets/ice-cream.png")
-        chips = pygame.image.load("assets/chips.png")
-        steak = pygame.image.load("assets/meat.png")
-        food_selector = pygame.image.load("assets/fast-food.png")
-
-    gui = define_gui(Assets)
+    gui = define_gui(assets)
     food_gui = Gui()
-    food_gui_top_level(food_gui, Assets)
+    food_gui_top_level(food_gui, assets)
 
     # main loop
     running = True
@@ -195,18 +212,18 @@ def main():
         mouse_pressed = pygame.mouse.get_pressed()[0]
         gui.step(mouse_pos(), mouse_pressed, render_resolution)
         for event in gui.get_events():
-            print(event)
-        gui.clear_events()
+            print(f"event: {event}")
+            print(f"event.tag: {event.tag}")
 
         # update food gui
         food_gui.step(mouse_pos(), mouse_pressed, render_resolution)
         for event in food_gui.get_events():
-            print(event)
-            if isinstance(event, OpenFoodSelector):
-                food_selector(food_gui, Assets)
-            elif isinstance(event, FoodOption):
-                food_gui_top_level(food_gui, Assets)
-        food_gui.clear_events()
+            print(f"event: {event}")
+            print(f"event.tag: {event.tag}")
+            if event.tag == FoodSelector.OpenFoodSelector:
+                food_selector(food_gui, assets)
+            elif isinstance(event.tag, FoodSelector):
+                food_gui_top_level(food_gui, assets)
 
         # drawing
         render_surface.fill((60, 60, 60))

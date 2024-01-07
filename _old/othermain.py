@@ -1,33 +1,40 @@
-from dataclasses import dataclass, is_dataclass
+from dataclasses import dataclass, is_dataclass, field, make_dataclass
 from typing import ClassVar, Dict, Type
 
 
 class DataEventMeta(type):
     def __new__(mcs, name, bases, attrs):
-        if bases and not is_dataclass(bases[0]):
-            cls = dataclass(super().__new__(mcs, name, bases, attrs))
-        else:
-            cls = super().__new__(mcs, name, bases, attrs)
+        # Create the class normally first
+        cls = super().__new__(mcs, name, bases, attrs)
 
-        if bases:  # Prevents registration of the base Event class itself
-            cls.register(cls)
+        # If this is not the base Event class
+        if name != "Event":
+            # Add default fields for all annotated attributes
+            annotations = attrs.get("__annotations__", {})
+            for attr_name, attr_type in annotations.items():
+                if attr_name not in attrs:
+                    attrs[attr_name] = field(default=None)
+
+            # Convert the subclass into a data class
+            cls = dataclass(cls)
+
+            # Register the subclass in the shared registry
+            bases[0].register(cls)  # Assumes Event is the first base class
+
         return cls
 
 
-@dataclass
 class Event(metaclass=DataEventMeta):
     """Event base that can optionally hold data."""
 
-    _registry: ClassVar[Dict[str, Type["Event"]]] = dict()  # Direct assignment
+    _registry: ClassVar[Dict[str, Type["Event"]]] = dict()
 
     @classmethod
     def register(cls, event_cls):
-        """Register a new event type. You should not call this."""
         cls._registry[event_cls.__name__] = event_cls
 
     @classmethod
     def all(cls):
-        """Return all registered events."""
         return list(cls._registry.values())
 
     def __eq__(self, other):
@@ -64,8 +71,16 @@ class Message(Event):
         self.message = content
 
 
+class Numpad2(Event):
+    number: int
+
+
 class Message2(Event):
-    content: str = None
+    content: str = ""
+
+
+class Alert(Event):
+    code: int = None
 
 
 # Usage
@@ -79,6 +94,26 @@ print(event1 == event3)  # False, different event types
 print(event1)  # NumpadEvent(number=5)
 
 event4 = Message()
-event5 = Message("Hello World!")
+event5 = Message(content="Hello World!")
 print(event4)  # Message()
 print(event5)  # Message(message='Hello World!')
+
+green = "\033[32m"
+red = "\033[31m"
+cend = "\033[0m"
+print(f"\n{green}BASICS WORKED{cend}\n")
+
+
+a = Numpad2
+b = a(4)
+print(b)  # Numpad(number=4)
+
+c = Message2
+d = c()
+print(d)  # Message(content='Hello World!')
+
+print(f"\n{green}ADVANCED WORKED{cend}\n")
+
+a = Alert
+b = a(code=404)
+print(b)  # Alert(code=404)
