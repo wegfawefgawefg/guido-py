@@ -4,7 +4,7 @@
 
 ## What is?
 
-A grug-brain gui element library for games.
+A grug-brain gui library for games.
 
 ## Why?
 
