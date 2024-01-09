@@ -198,8 +198,17 @@ I've got a submenu that opens up when you press a button, and hides when you sel
 
 ### Custom Elements
 You probably wont need to do this. At that point you need to read how the other elements are defined and do the same thing. 
+Composite elements comprised of other elements that need to react to external events are Guis. 
+So if you're trying to make reactive state across elements, you should probably make another Gui object, 
+and just put the logic in the event loop.
 
-Composite elements comprised of other elements are just Guis. 
+But if you want to make a custom element that consumes internal events, and then put in your other Guis, you can do that. 
+```python
+from shigg import Element, ElementEvent
+class MyCustomElement(Element):
+    pass
+```
+
 
 If you made a custom element you'll want to add a custom draw function for it, or it cant be drawn.
 ```python
