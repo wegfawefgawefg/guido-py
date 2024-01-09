@@ -26,10 +26,10 @@ class Slider(Element):
         default_value,
         snap_sensetivity_fraction=0.05,
         color=(200, 200, 200),
-        tag=None,
+        label=None,
+        moved_tag=None,
+        released_tag=None,
     ) -> None:
-        super().__init__(tag)
-
         self.position = position
         self.scale = scale
         self.color = color
@@ -43,33 +43,36 @@ class Slider(Element):
         self.value = default_value
 
         self.color = color
+        self.label = label
+
+        self.moved_tag = moved_tag
+        self.released_tag = released_tag
 
         self.hovered = False
         self.was_pressed = False
 
-    def step(self, mouse_position, mouse_pressed, resolution):
+    def step(self, mouse_position, mouse_pressed) -> ElementEvent:
         event = None
 
         if self.was_pressed and not mouse_pressed:
-            event = SliderReleased(self.tag, self.value)
+            event = SliderReleased(self.released_tag, self.value)
             self.was_pressed = False
 
-        absolute_tl = resolution * self.position
-        absolute_dimensions = resolution * self.scale
-        absolute_br = absolute_tl + absolute_dimensions
+        tl = self.position
+        br = tl + self.scale
 
         if (
-            mouse_position.x > absolute_tl.x
-            and mouse_position.x < absolute_br.x
-            and mouse_position.y > absolute_tl.y
-            and mouse_position.y < absolute_br.y
+            mouse_position.x > tl.x
+            and mouse_position.x < br.x
+            and mouse_position.y > tl.y
+            and mouse_position.y < br.y
         ):
             self.hovered = True
             if mouse_pressed:
                 old_value = self.value
 
-                total = absolute_br.x - absolute_tl.x
-                local_p = mouse_position.x - absolute_tl.x
+                total = br.x - tl.x
+                local_p = mouse_position.x - tl.x
                 fraction = local_p / total
                 self.value = self.minimum + fraction * (self.maximum - self.minimum)
 
@@ -87,9 +90,12 @@ class Slider(Element):
                 # round to nearest 100th, needs to work for negative and 0
                 self.value = round(self.value, 2)
 
+                # round to nearest step size
+                self.value = round(self.value / self.step_size) * self.step_size
+
                 # only emit event if value changed
                 if self.value != old_value:
-                    event = SliderMoved(self.tag, self.value)
+                    event = SliderMoved(self.moved_tag, self.value)
 
                 self.was_pressed = True
         else:

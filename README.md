@@ -39,7 +39,7 @@ class NumPad(Enum):
     Nine = auto()
 ```
 
-If you put a TopLevel.Settings tag on a button, the ButtonPressed and ButtonReleased events will have that tag attached to them. 
+If you put set a buttons tag to be TopLevel.Settings, the corresponding ButtonPressed or ButtonReleased events will have that tag attached to them. 
 
 
 ### 2. Define Some Elements
@@ -57,7 +57,7 @@ gui.add_button(
         glm.vec2(0.1, 0.1), # scale
         color=(200, 200, 200), # color if you want
         image=assets.get(Icons.gear), # icon if you want
-        tag=TopLevel.Settings, # event tag
+        released_tag=TopLevel.Settings, # event tag
     )
 )
 
@@ -73,7 +73,7 @@ gui.add_slider(
         1, # step size
         50, # starting value
         color=(200, 200, 200),
-        tag=TopLevel.SetVolume,
+        released_tag=TopLevel.SetVolume,
     )
 )
 ```
@@ -83,10 +83,35 @@ gui.add_slider(
 The gui object needs the mouse position and mouse button state to update.
 For a game do that once a frame in the game loop.
 
+
 ```python
+def normalized_mouse_pos():
+    return glm.vec2(pygame.mouse.get_pos()) / window_size
+
 mouse_pressed = pygame.mouse.get_pressed()[0] # pygame example
-gui.step(mouse_pos(), mouse_pressed, render_resolution)
+nmp = normalized_mouse_pos()
+gui.step(nmp, mouse_pressed, render_resolution)
 ```
+
+The mouse position needs to be normalized to the area the gui is in.
+So if your gui is defined relative to the whole window, your mouse position should be normalized to the whole window.
+If your gui is just on the right side of the screen, your mouse position should be normalized to the right side of the screen. (If its to the left of the center, the x value will be negative.)
+
+A handy utility function is included in the libray for this. 
+```python
+from shigg import transform_mouse_to_normalized_subsurface_coords
+nmp = normalized_mouse_pos()
+
+# getting the normalized mouse position for a gui on the left 30% of the screen
+ui_mp = transform_mouse_to_normalized_subsurface_coords(
+    nmp, render_resolution, ui_position, ui_resolution
+)
+
+# getting the normalized mouse position for a gui on the right 60% of the screen
+preview_mp = transform_mouse_to_normalized_subsurface_coords(
+    nmp, render_resolution, preview_pos, preview_resolution
+)
+`````
 
 ### 4. Get Your Events
 
@@ -175,6 +200,11 @@ I've got a submenu that opens up when you press a button, and hides when you sel
 You probably wont need to do this. At that point you need to read how the other elements are defined and do the same thing. 
 
 Composite elements comprised of other elements are just Guis. 
+
+If you made a custom element you'll want to add a custom draw function for it, or it cant be drawn.
+```python
+gui.draw_kit["MyCustomElement"] = my_custom_draw_function
+```
 
 ### It doesnt use a fancy data structure for optimizing mouse detection.
 How many buttons do you have, what the fuck? You should't need more than 20.

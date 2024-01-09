@@ -2,18 +2,11 @@ import glm
 from shigg.default_drawing import draw_button, draw_slider, draw_draggable
 from shigg.elements import Button, Slider, Draggable
 
-default_draw_kit = {
-    "Button": draw_button,
-    "Slider": draw_slider,
-    "Draggable": draw_draggable,
-}
-
 
 class Gui:
     def __init__(self) -> None:
         self.elements = []
-        self.events = []
-        self.draw_kit = default_draw_kit
+        self.draw_kit = None
 
     def add_element(self, element):
         """Add an element to the gui."""
@@ -40,15 +33,34 @@ class Gui:
         self.events = []
         return events
 
+    def consume_events(self, events):
+        """Consume a list of events, and pass each event to all child Elements.
+        This is useful for self referential behaviour,
+            such as defining a composite Element which responds to events from other elements.
+        Generally you won't need this, and can just respond to the events as they come from get_events.
+        """
+        for element in self.elements:
+            if element.consume_events:
+                element.consume_events(events)
+
     def set_draw_kit(self, draw_kit):
         """Set the draw kit for all elements in the gui.
         The draw kit is a dictionary mapping element types to draw functions.
         """
         self.draw_kit = draw_kit
 
+    def propogate_draw_kit(self):
+        """This is for if you have some compound element you want to set all the childrens draw kit at once.
+        You shouldn't be calling this often, only at ui construction time."""
+        for element in self.elements:
+            element.set_draw_kit(self.draw_kit)
+
     def draw(self, surface, resolution):
         """Draw the gui to the given surface."""
-        # sort elements by type
-        self.elements.sort(key=lambda element: element.__class__.__name__)
+        if self.draw_kit is None:
+            raise RuntimeError(
+                "Cannot draw gui, no draw kit has been set. "
+                "Use set_draw_kit to add a draw kit."
+            )
         for element in self.elements:
-            self.draw_kit[element.__class__.__name__](surface, element, resolution)
+            self.draw_kit(element, surface, resolution)

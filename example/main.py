@@ -5,25 +5,30 @@ import pygame
 import glm
 from small_ass_cache import AssetCache, loader
 
+# if you want to import from the local version of shigg
+import sys
+
+sys.path.append("../")
 from shigg import Gui, Button, Slider
+from shigg import transform_mouse_to_normalized_subsurface_coords
 
 
 pygame.init()
 
-render_resolution = glm.vec2(240, 160)
-window_size = render_resolution * 4
+render_resolution = glm.vec2(1200, 800) / 4.0
+window_size = render_resolution * 4.0
 
 ################################ UTILS ################################
 
 
-def mouse_pos():
-    return glm.vec2(pygame.mouse.get_pos()) / window_size * render_resolution
+def normalized_mouse_pos():
+    return glm.vec2(pygame.mouse.get_pos()) / window_size
 
 
 ################################ ASSETS ################################
 
 
-@loader(pygame.image.load, path="assets/")
+@loader(pygame.image.load, path="../assets/")
 class Icons(Enum):
     gear = "gear.png"
     potato = "potato.png"
@@ -68,13 +73,13 @@ def define_gui(assets):
     gui = Gui()
 
     # add settings button
-    gui.add_button(
+    gui.add_element(
         Button(
             glm.vec2(0.1, 0.1),
             glm.vec2(0.1, 0.1),
             color=(200, 200, 200),
             image=assets.get(Icons.gear),
-            tag=TopLevel.Settings,
+            released_tag=TopLevel.Settings,
         )
     )
 
@@ -91,7 +96,7 @@ def define_gui(assets):
     ]
 
     for i, (ix, iy) in enumerate(coords):
-        gui.add_button(
+        gui.add_element(
             Button(
                 grid_position
                 + glm.vec2(ix, iy) * (button_scale + glm.vec2(0.01, 0.01)),
@@ -99,7 +104,7 @@ def define_gui(assets):
                 color=(200, 200, 200),
                 label_color=(0, 0, 0),
                 label=str(nums[i]),
-                tag=[
+                released_tag=[
                     NumPad.Seven,
                     NumPad.Eight,
                     NumPad.Nine,
@@ -114,7 +119,7 @@ def define_gui(assets):
         )
 
     # make a slider
-    gui.add_slider(
+    gui.add_element(
         Slider(
             glm.vec2(0.1, 0.25),
             glm.vec2(0.3, 0.1),
@@ -124,7 +129,7 @@ def define_gui(assets):
             1,
             50,
             color=(200, 200, 200),
-            tag=TopLevel.SetVolume,
+            released_tag=TopLevel.SetVolume,
         )
     )
 
@@ -132,15 +137,15 @@ def define_gui(assets):
 
 
 def food_gui_top_level(gui, assets):
-    gui.buttons = []
+    gui.elements = []
     # make a select food option button
-    gui.add_button(
+    gui.add_element(
         Button(
             glm.vec2(0.6, 0.6),
             glm.vec2(0.1, 0.1),
             color=(200, 200, 200),
             image=assets.get(Icons.food_selector),
-            tag=FoodSelector.OpenFoodSelector,
+            released_tag=FoodSelector.OpenFoodSelector,
         )
     )
 
@@ -150,7 +155,7 @@ def food_selector(gui, assets):
     # each button is a food option
     # potato, hot chip, ice cream, steak
 
-    gui.buttons = []
+    gui.elements = []
     buttons_position = glm.vec2(0.5, 0.7)
     buttons_scale = glm.vec2(0.1, 0.1)
     buttons_spacing = glm.vec2(0.01, 0.01)
@@ -170,22 +175,18 @@ def food_selector(gui, assets):
             FoodSelector.SelectionSteak: Icons.steak,
         }[event_tag]
 
-        gui.add_button(
+        gui.add_element(
             Button(
                 buttons_position + glm.vec2(i, 0) * (buttons_scale + buttons_spacing),
                 buttons_scale,
                 color=(200, 200, 200),
-                tag=event_tag,
+                released_tag=event_tag,
                 image=assets.get(icon),
             )
         )
 
 
 ################################ MAIN ################################
-
-
-def draw(surface):
-    pygame.draw.circle(surface, (0, 255, 0), mouse_pos(), 4)
 
 
 def main():
@@ -210,13 +211,14 @@ def main():
 
         # update gui
         mouse_pressed = pygame.mouse.get_pressed()[0]
-        gui.step(mouse_pos(), mouse_pressed, render_resolution)
+        nmp = normalized_mouse_pos()
+        gui.step(nmp, mouse_pressed, render_resolution)
         for event in gui.get_events():
             print(f"event: {event}")
             print(f"event.tag: {event.tag}")
 
         # update food gui
-        food_gui.step(mouse_pos(), mouse_pressed, render_resolution)
+        food_gui.step(nmp, mouse_pressed, render_resolution)
         for event in food_gui.get_events():
             print(f"event: {event}")
             print(f"event.tag: {event.tag}")
@@ -229,7 +231,6 @@ def main():
         render_surface.fill((60, 60, 60))
         gui.draw(render_surface, render_resolution)
         food_gui.draw(render_surface, render_resolution)
-        draw(render_surface)
 
         # blit to window
         stretched_surface = pygame.transform.scale(render_surface, window_size)

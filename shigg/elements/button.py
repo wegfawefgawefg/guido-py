@@ -23,10 +23,9 @@ class Button(Element):
         label=None,
         label_color=None,
         image=None,
-        tag=None,
+        pressed_tag=None,
+        released_tag=None,
     ) -> None:
-        super().__init__(tag)
-
         self.position = position
         self.scale = scale
         self.color = color
@@ -36,24 +35,25 @@ class Button(Element):
         self.label_color = label_color
         self.image = image
 
+        self.pressed_tag = pressed_tag
+        self.released_tag = released_tag
+
         self.hovered = False
         self.pressed = False
         self.was_pressed = False
 
-    def step(self, mouse_position, mouse_pressed, resolution):
+    def step(self, mouse_position, mouse_pressed) -> ElementEvent:
         event = None
-        absolute_position = resolution * self.position
-        absolute_dimensions = resolution * self.scale
 
         if not mouse_pressed and self.was_pressed:
-            event = ButtonReleased(self.tag)
+            event = ButtonReleased(self.released_tag)
             self.was_pressed = False
 
         if (
-            mouse_position.x > absolute_position.x
-            and mouse_position.x < absolute_position.x + absolute_dimensions.x
-            and mouse_position.y > absolute_position.y
-            and mouse_position.y < absolute_position.y + absolute_dimensions.y
+            mouse_position.x > self.position.x
+            and mouse_position.x < self.position.x + self.scale.x
+            and mouse_position.y > self.position.y
+            and mouse_position.y < self.position.y + self.scale.y
         ):
             self.hovered = True
         else:
@@ -61,7 +61,7 @@ class Button(Element):
 
         if mouse_pressed and self.hovered:
             if self.pressed == False:
-                event = ButtonPressed(self.tag)
+                event = ButtonPressed(self.pressed_tag)
             self.pressed = True
             self.was_pressed = True
         else:

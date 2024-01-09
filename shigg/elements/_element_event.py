@@ -1,13 +1,11 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, is_dataclass, field, make_dataclass
-from typing import ClassVar, Dict, Type
-from enum import Enum, auto
+from abc import ABC
+from enum import Enum
 
 
 class ElementEvent(ABC):
     def __init__(self, tag) -> None:
         # enforce tag to be an enum
-        if not isinstance(tag, Enum):
+        if tag is not None and not isinstance(tag, Enum):
             red = "\033[91m"
             endc = "\033[0m"
             raise TypeError(
