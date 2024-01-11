@@ -400,30 +400,42 @@ def draw_left_right_selector(surface, left_right_selector, resolution):
     )
 
 
-"""class Label(Element):
-    def __init__(
-        self,
-        position,
-        scale,
-        color=(200, 200, 200),
-        text=None,
-        text_color=None,
-        texture=None,
-        label_color=None,
-        image=None,
-        no_background=False,
-    ) -> None:
-        self.position = position
-        self.scale = scale
-        self.color = color
-        self.text = text
-        self.text_color = text_color
-        self.texture = texture
-        self.label_color = label_color
-        self.image = image
+def draw_button_toggle(surface, button_toggle, resolution):
+    draw_button(surface, button_toggle.left_button, resolution)
+    draw_button(surface, button_toggle.right_button, resolution)
 
-    def step(self, mouse_position, mouse_pressed) -> ElementEvent:
-        pass"""
+    # figure out which one is selected
+    if button_toggle.toggled_option == button_toggle.left_option:
+        left_button_position = resolution * button_toggle.left_button.position
+        left_button_scale = resolution * button_toggle.left_button.scale
+        # draw a big green circle in the button
+        smaller_dimension = min(left_button_scale.x, left_button_scale.y)
+        pygame.draw.circle(
+            surface,
+            (0, 0, 0),
+            (
+                int(left_button_position.x + left_button_scale.x / 2),
+                int(left_button_position.y + left_button_scale.y / 2),
+            ),
+            int(smaller_dimension / 2.0),
+            4,
+        )
+
+    elif button_toggle.toggled_option == button_toggle.right_option:
+        right_button_position = resolution * button_toggle.right_button.position
+        right_button_scale = resolution * button_toggle.right_button.scale
+        # draw a big circle in the button
+        smaller_dimension = min(right_button_scale.x, right_button_scale.y)
+        pygame.draw.circle(
+            surface,
+            (0, 0, 0),
+            (
+                int(right_button_position.x + right_button_scale.x / 2),
+                int(right_button_position.y + right_button_scale.y / 2),
+            ),
+            int(smaller_dimension / 2.0),
+            4,
+        )
 
 
 def draw_label(surface, label, resolution):

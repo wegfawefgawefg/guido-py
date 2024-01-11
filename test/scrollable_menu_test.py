@@ -21,6 +21,7 @@ from shigg import (
     Label,
     LeftRightSelector,
     VerticalSlider,
+    ButtonToggle,
 )
 from shigg import transform_mouse_to_normalized_subsurface_coords
 
@@ -71,17 +72,34 @@ def define_gui(assets):
     cursor = glm.vec2(0.1, 0.1)
 
     # lets make a vertical column of labeled interactable elements
-    slider_names = ["red", "green", "blue", "alpha", "width", "height", "x", "y", "z"]
     button_names = ["dog", "cat", "mouse", "bird", "fish", "lizard", "snake", "frog"]
-    # resolutions
-    list_selector_options = [
-        "320x240",
-        "640x480",
-        "1280x720",
-        "1920x1080",
-        "3840x2160",
-        "2560x1440",
-        "2560x1600",
+
+    slider_variants = [
+        ("Volume", (0, 100)),
+        ("Brightness", (0, 100)),
+        ("Contrast", (0, 100)),
+        ("View Distance", (0, 100)),
+        ("FOV", (0, 100)),
+        ("Mouse Sensitivity", (0, 100)),
+        ("Gamma", (0, 100)),
+    ]
+
+    left_right_selector_variants = [
+        ("Resolution", ("320x240", "640x480", "1280x720", "1920x1080", "3840x2160")),
+        ("Texture Quality", ("Low", "Medium", "High")),
+        ("Audio Quality", ("Low", "Medium", "High")),
+        ("Audio Device", ("Speakers", "Headphones")),
+        ("Language", ("English", "Spanish", "French", "German")),
+    ]
+    button_toggle_variants = [
+        ("Food", ("Potato", "Ice Cream")),
+        ("Fullscreen", ("No", "Yes")),
+        ("Invert Y", ("Normal", "Inverted")),
+        ("VSync", ("No", "Yes")),
+        ("Shadows", ("Off", "On")),
+        ("Grass", ("Off", "On")),
+        ("Anti-Aliasing", ("Off", "On")),
+        ("Anisotropic Filtering", ("Off", "On")),
     ]
 
     cursor = glm.vec2(0.1, 0.01)
@@ -94,7 +112,7 @@ def define_gui(assets):
 
     rows = []
     num_rows = 50
-    element_types = [Button, Slider, LeftRightSelector]
+    element_types = [Button, Slider, LeftRightSelector, ButtonToggle]
     # settings label at the top
     settings_title = Label(
         copy.deepcopy(cursor),
@@ -165,7 +183,8 @@ def define_gui(assets):
                 )
             )
         elif element_type == Slider:
-            label_text = f"{slider_names[random.randint(0, len(slider_names) - 1)]}"
+            variant = random.choice(slider_variants)
+            label_text = variant[0]
             row.append(
                 Label(
                     copy.deepcopy(cursor),
@@ -176,21 +195,24 @@ def define_gui(assets):
                     # no_background=True,
                 )
             )
+            min_value = variant[1][0]
+            max_value = variant[1][1]
             row.append(
                 Slider(
                     glm.vec2(cursor.x + label_width + label_element_gap, cursor.y),
                     glm.vec2(element_width, row_height),
                     color=(200, 200, 200),
                     thumb_width=0.02,
-                    minimum=0,
-                    maximum=1,
-                    step_size=0.01,
-                    default_value=random.random(),
+                    minimum=min_value,
+                    maximum=max_value,
+                    step_size=(max_value - min_value) / 100.0,
+                    default_value=random.random() * (max_value - min_value),
                     label=label_text,
                 )
             )
         elif element_type == LeftRightSelector:
-            label_text = f"{slider_names[random.randint(0, len(slider_names) - 1)]}"
+            variant = random.choice(left_right_selector_variants)
+            label_text = variant[0]
             row.append(
                 Label(
                     copy.deepcopy(cursor),
@@ -201,16 +223,42 @@ def define_gui(assets):
                     # no_background=True,
                 )
             )
+            list_selector_options = variant[1]
             row.append(
                 LeftRightSelector(
                     glm.vec2(cursor.x + label_width + label_element_gap, cursor.y),
                     glm.vec2(element_width, row_height),
-                    0.02,
+                    0.05,
                     color=(200, 200, 200),
                     options=list_selector_options,
-                    starting_option=list_selector_options[
-                        random.randint(0, len(list_selector_options) - 1)
-                    ],
+                    starting_option=random.choice(list_selector_options),
+                )
+            )
+        elif element_type == ButtonToggle:
+            variant = random.choice(button_toggle_variants)
+            label_text = variant[0]
+            row.append(
+                Label(
+                    copy.deepcopy(cursor),
+                    glm.vec2(label_width, row_height),
+                    color=(20, 20, 20),
+                    text=label_text,
+                    text_color=(255, 255, 255),
+                    # no_background=True,
+                )
+            )
+            left_option = variant[1][0]
+            right_option = variant[1][1]
+            row.append(
+                ButtonToggle(
+                    glm.vec2(cursor.x + label_width + label_element_gap, cursor.y),
+                    glm.vec2(element_width, row_height),
+                    left_option,
+                    right_option,
+                    left_option,
+                    right_option,
+                    random.choice((left_option, right_option)),
+                    color=(200, 200, 200),
                 )
             )
 
@@ -222,7 +270,7 @@ def define_gui(assets):
     def cull():
         for row in rows:
             for element in row:
-                if element.position.y >= first_row_height and element.position.y <= 0.9:
+                if element.position.y >= first_row_height and element.position.y <= 0.8:
                     element.hidden = False
                 else:
                     element.hidden = True
@@ -240,7 +288,7 @@ def define_gui(assets):
         + row_height * 0.1
         + thumb_height / 2.0,
     )
-    scroll_bar_scale = glm.vec2(scroll_bar_width, 0.9 - thumb_height / 2.0)
+    scroll_bar_scale = glm.vec2(scroll_bar_width, 0.8 - thumb_height / 2.0)
 
     # find max y position element
     max_element_position = 0.0
@@ -282,6 +330,24 @@ def define_gui(assets):
                 )
 
     gui.add_element(settings_title)
+
+    # lets get some back and apply buttons at the bottom
+
+    back_and_apply_height = 0.85
+    back_button = Button(
+        glm.vec2(0.1, back_and_apply_height),
+        glm.vec2(0.1, row_height),
+        color=(200, 200, 200),
+        label="Back",
+    )
+    apply_button = Button(
+        glm.vec2(0.21, back_and_apply_height),
+        glm.vec2(0.1, row_height),
+        color=(200, 200, 200),
+        label="Apply",
+    )
+    gui.add_element(back_button)
+    gui.add_element(apply_button)
 
     return gui, scroll_bar_event_handler, cull, scroll_bar
 

@@ -6,6 +6,7 @@ from shigg.default_drawing import (
     draw_draggable,
     draw_label,
     draw_left_right_selector,
+    draw_button_toggle,
 )
 from shigg.elements import Button, Slider, Draggable
 
@@ -16,6 +17,7 @@ default_draw_kit = {
     "Draggable": draw_draggable,
     "Label": draw_label,
     "LeftRightSelector": draw_left_right_selector,
+    "ButtonToggle": draw_button_toggle,
 }
 
 
