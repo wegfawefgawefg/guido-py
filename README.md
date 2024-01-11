@@ -6,6 +6,8 @@
 
 A grug-brain gui library for games.
 
+![Screenshot](demo_screenshot.png)
+
 ## Why?
 
 Tkinter, QT, etc are big, complicated, and not good for games. This is tiny, and gets the job done.
