@@ -255,13 +255,3 @@ If you are a horrible person make a virtual mouse and move it around with the ga
 I think a graph of keypoints that can be stepped through with the gamepad, 
 and then the current keypoint is a fixed virtual mouse is the way to go. 
 Maybe Ill make a seperate library for that.
-
-## New in 0.2.1
-### New Elements
-- Added a VerticalSlider element
-- added horizontal list selector element (LeftRightSelector)
-- added a static label element
-
-### New Utilities
-- VerticalSlider has step up and step down utility functions
-- elements can be set to hidden

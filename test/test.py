@@ -73,6 +73,16 @@ def define_gui(assets):
     # lets make a vertical column of labeled interactable elements
     slider_names = ["red", "green", "blue", "alpha", "width", "height", "x", "y", "z"]
     button_names = ["dog", "cat", "mouse", "bird", "fish", "lizard", "snake", "frog"]
+    # resolutions
+    list_selector_options = [
+        "320x240",
+        "640x480",
+        "1280x720",
+        "1920x1080",
+        "3840x2160",
+        "2560x1440",
+        "2560x1600",
+    ]
 
     cursor = glm.vec2(0.1, 0.01)
     row_height = 0.05
@@ -84,7 +94,7 @@ def define_gui(assets):
 
     rows = []
     num_rows = 50
-    element_types = [Button, Slider]
+    element_types = [Button, Slider, LeftRightSelector]
     # settings label at the top
     settings_title = Label(
         copy.deepcopy(cursor),
@@ -106,9 +116,12 @@ def define_gui(assets):
 
     first_row_height = copy.deepcopy(cursor.y)
 
+    section_num = 1
     for i in range(num_rows):
         new_section_chance = 0.15
         new_section_roll = random.random()
+        if i == 0:
+            new_section_roll = 0.0
         if new_section_roll < new_section_chance:
             cursor.y += row_height * 1.1
             # add a new section label
@@ -119,17 +132,18 @@ def define_gui(assets):
                     row_height,
                 ),
                 color=(50, 20, 20),
-                text=f"Section {i}",
+                text=f"Section {section_num}",
                 text_color=(255, 255, 255),
                 # no_background=True,
             )
+            section_num += 1
             rows.append([section_label])
             cursor.y += row_height * 1.1
             continue
 
         row = []
         # random element
-        element_type = element_types[random.randint(0, 1)]
+        element_type = random.choice(element_types)
         if element_type == Button:
             label_text = f"{button_names[random.randint(0, len(button_names) - 1)]}"
             row.append(
@@ -173,6 +187,30 @@ def define_gui(assets):
                     step_size=0.01,
                     default_value=random.random(),
                     label=label_text,
+                )
+            )
+        elif element_type == LeftRightSelector:
+            label_text = f"{slider_names[random.randint(0, len(slider_names) - 1)]}"
+            row.append(
+                Label(
+                    copy.deepcopy(cursor),
+                    glm.vec2(label_width, row_height),
+                    color=(20, 20, 20),
+                    text=label_text,
+                    text_color=(255, 255, 255),
+                    # no_background=True,
+                )
+            )
+            row.append(
+                LeftRightSelector(
+                    glm.vec2(cursor.x + label_width + label_element_gap, cursor.y),
+                    glm.vec2(element_width, row_height),
+                    0.02,
+                    color=(200, 200, 200),
+                    options=list_selector_options,
+                    starting_option=list_selector_options[
+                        random.randint(0, len(list_selector_options) - 1)
+                    ],
                 )
             )
 
@@ -237,9 +275,10 @@ def define_gui(assets):
     # shift all elements position up when scroll bar is moved
     def scroll_bar_event_handler(event):
         if event.tag == CustomEvent.MENU_SCROLL:
-            for element in elements:
-                element.position.y = (
-                    original_element_positions[elements.index(element)].y - event.value
+            for i, element in enumerate(elements):
+                original_pos = original_element_positions[i]
+                element.position = glm.vec2(
+                    original_pos.x, original_pos.y - event.value
                 )
 
     gui.add_element(settings_title)

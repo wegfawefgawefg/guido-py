@@ -77,8 +77,8 @@ class VerticalSlider(Element):
         br = tl + self.scale
 
         if (
-            mouse_position.x > tl.x - self.thumb_height / 2
-            and mouse_position.x < br.x + self.thumb_height / 2
+            mouse_position.x > tl.x
+            and mouse_position.x < br.x
             and mouse_position.y > tl.y
             and mouse_position.y < br.y
         ):
