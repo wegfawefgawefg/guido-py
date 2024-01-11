@@ -2,24 +2,24 @@ from ._element_event import ElementEvent
 from ._element import Element
 
 
-class SliderMoved(ElementEvent):
+class VerticalSliderMoved(ElementEvent):
     def __init__(self, tag, value) -> None:
         super().__init__(tag)
         self.value = value
 
 
-class SliderReleased(ElementEvent):
+class VerticalSliderReleased(ElementEvent):
     def __init__(self, tag, value) -> None:
         super().__init__(tag)
         self.value = value
 
 
-class Slider(Element):
+class VerticalSlider(Element):
     def __init__(
         self,
         position,
         scale,
-        thumb_width,
+        thumb_height,
         minimum,
         maximum,
         step_size,
@@ -34,7 +34,7 @@ class Slider(Element):
         self.position = position
         self.scale = scale
         self.color = color
-        self.thumb_width = thumb_width
+        self.thumb_height = thumb_height
 
         self.minimum = minimum
         self.maximum = maximum
@@ -52,19 +52,33 @@ class Slider(Element):
         self.hovered = False
         self.was_pressed = False
 
+    def scroll_down_one_step(self):
+        self.value -= self.step_size
+        if self.value < self.minimum:
+            self.value = self.minimum
+
+        return VerticalSliderMoved(self.moved_tag, self.value)
+
+    def scroll_up_one_step(self):
+        self.value += self.step_size
+        if self.value > self.maximum:
+            self.value = self.maximum
+
+        return VerticalSliderMoved(self.moved_tag, self.value)
+
     def step(self, mouse_position, mouse_pressed) -> ElementEvent:
         event = None
 
         if self.was_pressed and not mouse_pressed:
-            event = SliderReleased(self.released_tag, self.value)
+            event = VerticalSliderReleased(self.released_tag, self.value)
             self.was_pressed = False
 
         tl = self.position
         br = tl + self.scale
 
         if (
-            mouse_position.x > tl.x
-            and mouse_position.x < br.x
+            mouse_position.x > tl.x - self.thumb_height / 2
+            and mouse_position.x < br.x + self.thumb_height / 2
             and mouse_position.y > tl.y
             and mouse_position.y < br.y
         ):
@@ -72,12 +86,11 @@ class Slider(Element):
             if mouse_pressed:
                 old_value = self.value
 
-                total = br.x - tl.x
-                local_p = mouse_position.x - tl.x
+                total = br.y - tl.y
+                local_p = mouse_position.y - tl.y
                 fraction = local_p / total
                 self.value = self.minimum + fraction * (self.maximum - self.minimum)
 
-                # if value is within 5% of the minimum or maximum, snap to it
                 if self.snap_sensetivity_fraction > 0.0:
                     if self.value > self.maximum * (
                         1.0 - self.snap_sensetivity_fraction
@@ -88,15 +101,11 @@ class Slider(Element):
                     ):
                         self.value = self.minimum
 
-                # round to nearest 100th, needs to work for negative and 0
                 self.value = round(self.value, 2)
-
-                # round to nearest step size
                 self.value = round(self.value / self.step_size) * self.step_size
 
-                # only emit event if value changed
                 if self.value != old_value:
-                    event = SliderMoved(self.moved_tag, self.value)
+                    event = VerticalSliderMoved(self.moved_tag, self.value)
 
                 self.was_pressed = True
         else:

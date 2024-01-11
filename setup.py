@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="shigg",
-    version="0.2.0",
+    version="0.2.1",
     packages=find_packages(),
     include_package_data=True,
     description="A bad Gui Library for games.",

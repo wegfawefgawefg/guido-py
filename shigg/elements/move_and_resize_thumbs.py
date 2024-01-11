@@ -23,7 +23,7 @@ class MoveAndResizeThumbs(Element):
         texture=None,
         image=None,
     ) -> None:
-        self.scale = scale
+        super().__init__()
         self.target_element = target_element
 
         self.color = color
@@ -31,7 +31,7 @@ class MoveAndResizeThumbs(Element):
         self.image = image
 
         self.move_thumb = Draggable(
-            self.target_element.position - self.scale,
+            self.target_element.position - scale,
             scale,
             color,
             moved_tag=InternalMoveAndResizeThumbsEvent.MoveThumbMoved,
@@ -42,6 +42,32 @@ class MoveAndResizeThumbs(Element):
             scale,
             color,
             moved_tag=InternalMoveAndResizeThumbsEvent.ResizeThumbMoved,
+        )
+
+    @property
+    def position(self):
+        return self.move_thumb.position
+
+    @position.setter
+    def position(self, value):
+        self.move_thumb.position = value
+        self.target_element.position = value + self.move_thumb.scale
+        self.resize_thumb.position = (
+            value + self.move_thumb.scale + self.target_element.scale
+        )
+
+    @property
+    def scale(self):
+        return self.move_thumb.scale
+
+    @scale.setter
+    def scale(self, value):
+        self.move_thumb.scale = value
+        self.resize_thumb.scale = value
+
+        self.target_element.position = self.move_thumb.position + self.move_thumb.scale
+        self.resize_thumb.position = (
+            self.move_thumb.position + self.move_thumb.scale + self.target_element.scale
         )
 
     def step(self, mouse_position, mouse_pressed) -> ElementEvent:
@@ -68,18 +94,23 @@ class MoveAndResizeThumbs(Element):
                     self.move_thumb.position + self.move_thumb.scale
                 )
 
-            # make sure resize thumb doesnt go to the left of the bottom right of move thumb
-            if (
-                self.resize_thumb.position.x
-                < self.move_thumb.position.x + self.move_thumb.scale.x
-            ):
-                self.resize_thumb.position.x = (
-                    self.move_thumb.position.x + self.move_thumb.scale.x
-                )
-            if (
-                self.resize_thumb.position.y
-                < self.move_thumb.position.y + self.move_thumb.scale.y
-            ):
-                self.resize_thumb.position.y = (
-                    self.move_thumb.position.y + self.move_thumb.scale.y
-                )
+        self.move_thumb.position = self.target_element.position - self.move_thumb.scale
+        self.resize_thumb.position = (
+            self.target_element.position + self.target_element.scale
+        )
+
+        # make sure resize thumb doesnt go to the left of the bottom right of move thumb
+        if (
+            self.resize_thumb.position.x
+            < self.move_thumb.position.x + self.move_thumb.scale.x
+        ):
+            self.resize_thumb.position.x = (
+                self.move_thumb.position.x + self.move_thumb.scale.x
+            )
+        if (
+            self.resize_thumb.position.y
+            < self.move_thumb.position.y + self.move_thumb.scale.y
+        ):
+            self.resize_thumb.position.y = (
+                self.move_thumb.position.y + self.move_thumb.scale.y
+            )

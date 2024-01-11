@@ -1,6 +1,7 @@
 import copy
 from enum import Enum, auto
 import math
+import random
 
 import pygame
 import glm
@@ -9,9 +10,18 @@ from small_ass_cache import AssetCache, loader
 # if you want to import from the local version of shigg
 import sys
 
+
 sys.path.append("../")
 from shigg import Element, ElementEvent
-from shigg import Gui, Button, Slider, Draggable
+from shigg import (
+    Gui,
+    Button,
+    Slider,
+    Draggable,
+    Label,
+    LeftRightSelector,
+    VerticalSlider,
+)
 from shigg import transform_mouse_to_normalized_subsurface_coords
 
 
@@ -49,6 +59,7 @@ assets = AssetCache()
 class CustomEvent(Enum):
     TL_MOVED = auto()
     BR_MOVED = auto()
+    MENU_SCROLL = auto()
 
 
 ################################ DEFINE GUI ################################
@@ -58,29 +69,182 @@ def define_gui(assets):
     gui = Gui()
 
     cursor = glm.vec2(0.1, 0.1)
-    button = Button(
+
+    # lets make a vertical column of labeled interactable elements
+    slider_names = ["red", "green", "blue", "alpha", "width", "height", "x", "y", "z"]
+    button_names = ["dog", "cat", "mouse", "bird", "fish", "lizard", "snake", "frog"]
+
+    cursor = glm.vec2(0.1, 0.01)
+    row_height = 0.05
+    label_width = 0.2
+    element_width = 0.5
+    label_element_gap = 0.02
+
+    scroll_bar_width = 0.05
+
+    rows = []
+    num_rows = 50
+    element_types = [Button, Slider]
+    # settings label at the top
+    settings_title = Label(
         copy.deepcopy(cursor),
-        glm.vec2(0.1, 0.1),
+        glm.vec2(
+            label_width
+            + element_width
+            + label_element_gap
+            + label_element_gap
+            + scroll_bar_width,
+            row_height,
+        ),
+        color=(50, 20, 20),
+        text="Settings",
+        text_color=(255, 255, 255),
+        # no_background=True,
+    )
+
+    cursor.y += row_height * 1.1
+
+    first_row_height = copy.deepcopy(cursor.y)
+
+    for i in range(num_rows):
+        new_section_chance = 0.15
+        new_section_roll = random.random()
+        if new_section_roll < new_section_chance:
+            cursor.y += row_height * 1.1
+            # add a new section label
+            section_label = Label(
+                copy.deepcopy(cursor),
+                glm.vec2(
+                    label_width + element_width + label_element_gap,
+                    row_height,
+                ),
+                color=(50, 20, 20),
+                text=f"Section {i}",
+                text_color=(255, 255, 255),
+                # no_background=True,
+            )
+            rows.append([section_label])
+            cursor.y += row_height * 1.1
+            continue
+
+        row = []
+        # random element
+        element_type = element_types[random.randint(0, 1)]
+        if element_type == Button:
+            label_text = f"{button_names[random.randint(0, len(button_names) - 1)]}"
+            row.append(
+                Label(
+                    copy.deepcopy(cursor),
+                    glm.vec2(label_width, row_height),
+                    color=(20, 20, 20),
+                    text=label_text,
+                    text_color=(255, 255, 255),
+                    # no_background=True,
+                )
+            )
+            row.append(
+                Button(
+                    glm.vec2(cursor.x + label_width + label_element_gap, cursor.y),
+                    glm.vec2(element_width, row_height),
+                    color=(200, 200, 200),
+                    label=f"{button_names[random.randint(0, len(button_names) - 1)]}",
+                )
+            )
+        elif element_type == Slider:
+            label_text = f"{slider_names[random.randint(0, len(slider_names) - 1)]}"
+            row.append(
+                Label(
+                    copy.deepcopy(cursor),
+                    glm.vec2(label_width, row_height),
+                    color=(20, 20, 20),
+                    text=label_text,
+                    text_color=(255, 255, 255),
+                    # no_background=True,
+                )
+            )
+            row.append(
+                Slider(
+                    glm.vec2(cursor.x + label_width + label_element_gap, cursor.y),
+                    glm.vec2(element_width, row_height),
+                    color=(200, 200, 200),
+                    thumb_width=0.02,
+                    minimum=0,
+                    maximum=1,
+                    step_size=0.01,
+                    default_value=random.random(),
+                    label=label_text,
+                )
+            )
+
+        rows.append(row)
+
+        cursor.y += row_height * 1.1
+
+    #  make sure row elements dont draw if they are above the first row position
+    def cull():
+        for row in rows:
+            for element in row:
+                if element.position.y >= first_row_height and element.position.y <= 0.9:
+                    element.hidden = False
+                else:
+                    element.hidden = True
+
+    for row in rows:
+        for element in row:
+            gui.add_element(element)
+
+    # add a scroll bar at the right side
+    thumb_height = 0.05
+    scroll_bar_position = glm.vec2(
+        settings_title.position.x + settings_title.scale.x - scroll_bar_width,
+        settings_title.position.y
+        + settings_title.scale.y
+        + row_height * 0.1
+        + thumb_height / 2.0,
+    )
+    scroll_bar_scale = glm.vec2(scroll_bar_width, 0.9 - thumb_height / 2.0)
+
+    # find max y position element
+    max_element_position = 0.0
+    for element in gui.elements:
+        if element.position.y > max_element_position:
+            max_element_position = element.position.y
+
+    scroll_bar_max = max_element_position
+    scroll_bar = VerticalSlider(
+        scroll_bar_position,
+        scroll_bar_scale,
         color=(200, 200, 200),
-        label="button",
+        thumb_height=0.05,
+        minimum=0.0,
+        maximum=max_element_position,
+        snap_sensetivity_fraction=0.00,
+        step_size=row_height * 1.1,
+        default_value=0,
+        label="scroll",
+        moved_tag=CustomEvent.MENU_SCROLL,
     )
-    gui.add_element(button)
+    gui.add_element(scroll_bar)
 
-    from shigg import (
-        MoveAndResizeThumbs,
-        draw_move_and_resize_thumbs,
-    )
+    elements = []
+    for row in rows:
+        for element in row:
+            elements.append(element)
+    original_element_positions = []
+    for element in elements:
+        original_element_positions.append(copy.deepcopy(element.position))
 
-    gui.draw_kit["MoveAndResizeThumbs"] = draw_move_and_resize_thumbs
+    # shift all elements position up when scroll bar is moved
+    def scroll_bar_event_handler(event):
+        if event.tag == CustomEvent.MENU_SCROLL:
+            for element in elements:
+                element.position.y = (
+                    original_element_positions[elements.index(element)].y - event.value
+                )
 
-    thumbs = MoveAndResizeThumbs(
-        glm.vec2(0.03, 0.03),
-        button,
-        color=(200, 200, 200),
-    )
-    gui.add_element(thumbs)
+    gui.add_element(settings_title)
 
-    return gui
+    return gui, scroll_bar_event_handler, cull, scroll_bar
 
 
 ################################ MAIN ################################
@@ -95,7 +259,7 @@ def main():
     pygame.display.set_caption("Shigg Builder")
     render_surface = pygame.Surface(render_resolution.to_tuple())
 
-    gui = define_gui(assets)
+    gui, scroll_bar_event_handler, cull, scroll_bar = define_gui(assets)
 
     # main loop
     running = True
@@ -107,6 +271,15 @@ def main():
             ):
                 running = False
 
+            # if the mouse scroll wheel is moved, scroll the scroll bar
+            scroll_event = None
+            if event.type == pygame.MOUSEWHEEL:
+                # determine if up or down
+                if event.y < 0:
+                    scroll_event = scroll_bar.scroll_up_one_step()
+                elif event.y > 0:
+                    scroll_event = scroll_bar.scroll_down_one_step()
+
         # update gui
         mouse_pressed = pygame.mouse.get_pressed()[0]
 
@@ -114,21 +287,22 @@ def main():
         # print(f"{nmp}, ui: {ui_mp}, preview: {preview_mp}")
 
         gui.step(nmp, mouse_pressed)
+        if scroll_event:
+            gui.events.append(scroll_event)
         for event in gui.get_events():
             print(f"event: {event}")
             print(f"event.tag: {event.tag}")
+            scroll_bar_event_handler(event)
 
         ################################ RENDERING ################################
         # clear surfaces
         render_surface.fill((60, 60, 60))
 
         # draw gui
+        cull()
         gui.draw(render_surface, render_resolution)
 
         # draw mouse
-        # pygame.draw.circle(
-        #     render_surface, (0, 255, 0), normalized_mouse_pos() * render_resolution, 4
-        # )
         render_surface.blit(
             assets.get(Icons.cursor), normalized_mouse_pos() * render_resolution
         )

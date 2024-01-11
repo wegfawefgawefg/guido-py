@@ -195,6 +195,58 @@ def draw_slider(surface, slider, resolution):
     )
 
 
+def draw_vertical_slider(surface, slider, resolution):
+    absolute_position = resolution * slider.position
+    absolute_dimensions = resolution * slider.scale
+
+    ap = absolute_position
+    ad = absolute_dimensions
+    offset = glm.vec2(1, 1)
+
+    # draw body
+    pygame.draw.rect(
+        surface,
+        (100, 100, 100),
+        (ap.to_tuple(), ad.to_tuple()),
+    )
+
+    # calculate value fraction for the vertical slider
+    value_fraction = (slider.value - slider.minimum) / (slider.maximum - slider.minimum)
+    rel_position_y = value_fraction * slider.scale.y  # for vertical slider
+    absolute_thumb_y = absolute_position.y + rel_position_y * resolution.y
+
+    absolute_thumb_height = resolution.y * slider.thumb_height
+    half_thumb_height = absolute_thumb_height / 2.0
+
+    thumb_position = glm.vec2(absolute_position.x, absolute_thumb_y - half_thumb_height)
+    absolute_thumb_dimensions = glm.vec2(absolute_dimensions.x, absolute_thumb_height)
+
+    tp = thumb_position
+    td = absolute_thumb_dimensions
+    offset = glm.vec2(1, 1)
+
+    # shadow
+    pygame.draw.rect(
+        surface,
+        (0, 0, 0),
+        (tp.to_tuple(), (td + offset).to_tuple()),
+    )
+
+    # highlight
+    pygame.draw.rect(
+        surface,
+        (255, 255, 255),
+        (tp.to_tuple(), td.to_tuple()),
+    )
+
+    # slider center
+    pygame.draw.rect(
+        surface,
+        slider.color,
+        ((tp + offset).to_tuple(), (td - offset).to_tuple()),
+    )
+
+
 def draw_draggable(surface, draggable, resolution):
     absolute_position = resolution * draggable.position
     absolute_dimensions = resolution * draggable.scale
@@ -320,3 +372,114 @@ def draw_draggable(surface, draggable, resolution):
 def draw_move_and_resize_thumbs(surface, move_and_resize_thumbs, resolution):
     draw_draggable(surface, move_and_resize_thumbs.move_thumb, resolution)
     draw_draggable(surface, move_and_resize_thumbs.resize_thumb, resolution)
+
+
+def draw_left_right_selector(surface, left_right_selector, resolution):
+    draw_button(surface, left_right_selector.left_button, resolution)
+    draw_button(surface, left_right_selector.right_button, resolution)
+
+    font = pygame.font.SysFont("Arial", 24)
+    text = font.render(left_right_selector.selected_option, True, (0, 0, 0))
+
+    ap = resolution * left_right_selector.position
+    ad = resolution * left_right_selector.scale
+
+    text_position = (
+        ap.x + ad.x / 2 - text.get_width() / 2,
+        ap.y + ad.y / 2 - text.get_height() / 2,
+    )
+
+    surface.blit(
+        text,
+        text_position,
+    )
+
+    surface.blit(
+        text,
+        text_position,
+    )
+
+
+"""class Label(Element):
+    def __init__(
+        self,
+        position,
+        scale,
+        color=(200, 200, 200),
+        text=None,
+        text_color=None,
+        texture=None,
+        label_color=None,
+        image=None,
+        no_background=False,
+    ) -> None:
+        self.position = position
+        self.scale = scale
+        self.color = color
+        self.text = text
+        self.text_color = text_color
+        self.texture = texture
+        self.label_color = label_color
+        self.image = image
+
+    def step(self, mouse_position, mouse_pressed) -> ElementEvent:
+        pass"""
+
+
+def draw_label(surface, label, resolution):
+    """label is a non interactable, static thing."""
+    ap = resolution * label.position
+    ad = resolution * label.scale
+    ad.x = max(ad.x, 0.0)
+    ad.y = max(ad.y, 0.0)
+
+    # draw body
+    """ if label has a texture, draw that, else draw a rectangle."""
+    if not label.no_background:
+        if label.background_texture:
+            surface.blit(
+                pygame.transform.scale(
+                    label.background_texture,
+                    (int(ad.x), int(ad.y)),
+                ),
+                ap.to_tuple(),
+            )
+        else:
+            pygame.draw.rect(
+                surface,
+                label.color,
+                (ap.to_tuple(), (ad).to_tuple()),
+            )
+
+    # draw image or text
+    if label.image:
+        # scale the image to fit the button
+        # scale both dimensions by the same amount, but scale the larger dimension to fit the button
+        image_dimensions = glm.vec2(label.image.get_width(), label.image.get_height())
+        larger_dimension = max(image_dimensions.x, image_dimensions.y)
+        scale_factor = (ad * 0.9) / larger_dimension
+        scaled_dimensions = image_dimensions * scale_factor
+        centered_offset = scaled_dimensions * 0.05
+
+        image_position = ap + ad / 2 - scaled_dimensions / 2
+
+        # draw the image
+        surface.blit(
+            pygame.transform.scale(
+                label.image,
+                (int(scaled_dimensions.x), int(scaled_dimensions.y)),
+            ),
+            image_position.to_tuple(),
+        )
+    elif label.text:
+        font = pygame.font.SysFont("Arial", 24)
+        text = font.render(label.text, True, label.text_color)
+        text_position = (
+            ap.x + ad.x / 2 - text.get_width() / 2,
+            ap.y + ad.y / 2 - text.get_height() / 2,
+        )
+
+        surface.blit(
+            text,
+            text_position,
+        )

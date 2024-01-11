@@ -26,6 +26,7 @@ class Button(Element):
         pressed_tag=None,
         released_tag=None,
     ) -> None:
+        super().__init__()
         self.position = position
         self.scale = scale
         self.color = color

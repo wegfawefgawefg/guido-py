@@ -1,11 +1,21 @@
 import glm
-from shigg.default_drawing import draw_button, draw_slider, draw_draggable
+from shigg.default_drawing import (
+    draw_button,
+    draw_slider,
+    draw_vertical_slider,
+    draw_draggable,
+    draw_label,
+    draw_left_right_selector,
+)
 from shigg.elements import Button, Slider, Draggable
 
 default_draw_kit = {
     "Button": draw_button,
     "Slider": draw_slider,
+    "VerticalSlider": draw_vertical_slider,
     "Draggable": draw_draggable,
+    "Label": draw_label,
+    "LeftRightSelector": draw_left_right_selector,
 }
 
 
@@ -49,6 +59,7 @@ class Gui:
     def draw(self, surface, resolution):
         """Draw the gui to the given surface."""
         # sort elements by type
-        self.elements.sort(key=lambda element: element.__class__.__name__)
         for element in self.elements:
+            if element.hidden:
+                continue
             self.draw_kit[element.__class__.__name__](surface, element, resolution)

@@ -32,6 +32,7 @@ class Draggable(Element):
         released_tag=None,
         moved_tag=None,
     ) -> None:
+        super().__init__()
         self.position = position
         self.scale = scale
         self.color = color
